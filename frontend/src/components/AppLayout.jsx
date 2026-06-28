@@ -46,7 +46,7 @@ export default function AppLayout({ user, onLogout }) {
 
   const userMenu = {
     items: [
-      { key: 'profile', icon: <UserOutlined />, label: user?.fullName || user?.username },
+      { key: 'profile', icon: <UserOutlined />, label: user?.name || user?.email },
       { type: 'divider' },
       { key: 'logout', icon: <LogoutOutlined />, label: 'Logout', danger: true },
     ],
@@ -73,7 +73,7 @@ export default function AppLayout({ user, onLogout }) {
           <Dropdown menu={userMenu} placement="bottomRight">
             <Button type="text" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <Avatar size="small" icon={<UserOutlined />} />
-              <Text>{user?.fullName}</Text>
+              <Text>{user?.name || user?.email}</Text>
             </Button>
           </Dropdown>
         </Header>

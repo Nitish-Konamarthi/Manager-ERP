@@ -12,13 +12,14 @@ export default function Login({ onLogin }) {
     setLoading(true);
     try {
       const res = await api.post('/auth/login', values);
-      localStorage.setItem('token', res.data.token);
+      localStorage.setItem('token', res.data.accessToken);
+      localStorage.setItem('refreshToken', res.data.refreshToken);
       localStorage.setItem('user', JSON.stringify(res.data.user));
       onLogin(res.data.user);
-      message.success(`Welcome, ${res.data.user.fullName}!`);
+      message.success(`Welcome, ${res.data.user.name}!`);
       navigate('/');
     } catch (err) {
-      message.error(err.response?.data?.error || 'Login failed');
+      message.error(err.response?.data?.message || err.response?.data?.error || 'Login failed');
     } finally { setLoading(false); }
   };
 
@@ -31,8 +32,8 @@ export default function Login({ onLogin }) {
           <Typography.Text type="secondary">Fresh Produce Management System</Typography.Text>
         </Space>
         <Form onFinish={onFinish} layout="vertical" style={{ marginTop: 24 }}>
-          <Form.Item name="username" rules={[{ required: true, message: 'Please enter username' }]}>
-            <Input prefix={<UserOutlined />} placeholder="Username" size="large" />
+          <Form.Item name="email" rules={[{ required: true, type: 'email', message: 'Please enter a valid email' }]}>
+            <Input prefix={<UserOutlined />} placeholder="Email" size="large" />
           </Form.Item>
           <Form.Item name="password" rules={[{ required: true, message: 'Please enter password' }]}>
             <Input.Password prefix={<LockOutlined />} placeholder="Password" size="large" />
@@ -41,7 +42,7 @@ export default function Login({ onLogin }) {
             <Button type="primary" htmlType="submit" loading={loading} block size="large">Sign In</Button>
           </Form.Item>
           <Typography.Text type="secondary" style={{ display: 'block', textAlign: 'center', fontSize: 12 }}>
-            Default: admin / admin123
+            Default: admin@managererp.com / Admin@123
           </Typography.Text>
         </Form>
       </Card>

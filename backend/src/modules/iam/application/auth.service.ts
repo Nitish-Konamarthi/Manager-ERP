@@ -59,6 +59,26 @@ export class AuthService {
     }
   }
 
+  async verify(token: string) {
+    try {
+      const payload = this.jwtService.verify(token) as JwtPayload
+      const user = await this.prisma.user.findUnique({
+        where: { id: payload.sub },
+        include: { userRoles: { include: { role: { include: { permissions: true } } } } },
+      })
+      if (!user || user.status !== 'ACTIVE') {
+        return { valid: false }
+      }
+      const roles = user.userRoles.map(ur => ur.role.name)
+      return {
+        valid: true,
+        user: { id: user.id, email: user.email, name: user.name, roles },
+      }
+    } catch {
+      return { valid: false }
+    }
+  }
+
   async logout(userId: string): Promise<void> {
     await this.prisma.user.update({
       where: { id: userId },

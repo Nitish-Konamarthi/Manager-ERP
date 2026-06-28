@@ -66,7 +66,12 @@ async function main() {
   const hash = await bcrypt.hash(adminPassword, 12)
   const admin = await prisma.user.upsert({
     where: { email: adminEmail },
-    update: {},
+    update: {
+      organizationId: org.id,
+      passwordHash: hash,
+      name: 'Admin User',
+      status: UserStatus.ACTIVE,
+    },
     create: {
       organizationId: org.id,
       email: adminEmail,
@@ -128,6 +133,21 @@ async function main() {
       where: { organizationId_accountCode: { organizationId: org.id, accountCode: acc.accountCode } },
       update: {},
       create: { organizationId: org.id, ...acc },
+    })
+  }
+
+  const expenseHeads = [
+    { name: 'Fuel', code: 'FUEL' },
+    { name: 'Rent', code: 'RENT' },
+    { name: 'Utilities', code: 'UTIL' },
+    { name: 'Repairs', code: 'REPAIR' },
+    { name: 'Miscellaneous', code: 'MISC' },
+  ]
+  for (const head of expenseHeads) {
+    await prisma.expenseHead.upsert({
+      where: { organizationId_code: { organizationId: org.id, code: head.code } },
+      update: {},
+      create: { organizationId: org.id, ...head },
     })
   }
 

@@ -9,8 +9,21 @@ api.interceptors.request.use(config => {
 });
 
 api.interceptors.response.use(
-  res => res,
-  err => { if (err.response?.status === 401) { localStorage.removeItem('token'); window.location.href = '/login'; } return Promise.reject(err); }
+  res => {
+    if (res.data && res.data.success === true && Object.prototype.hasOwnProperty.call(res.data, 'data')) {
+      return { ...res, data: res.data.data };
+    }
+    return res;
+  },
+  err => {
+    if (err.response?.status === 401) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('user');
+      if (window.location.pathname !== '/login') window.location.href = '/login';
+    }
+    return Promise.reject(err);
+  }
 );
 
 export default api;

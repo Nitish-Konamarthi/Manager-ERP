@@ -27,6 +27,12 @@ function ProtectedRoute({ children }) {
   return children;
 }
 
+function clearAuthStorage() {
+  localStorage.removeItem('token');
+  localStorage.removeItem('refreshToken');
+  localStorage.removeItem('user');
+}
+
 export default function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -35,8 +41,8 @@ export default function App() {
     const token = localStorage.getItem('token');
     if (token) {
       api.post('/auth/verify', { token }).then(res => {
-        if (res.data.valid) { setUser(res.data.user); } else { localStorage.removeItem('token'); }
-      }).catch(() => { localStorage.removeItem('token'); }).finally(() => setLoading(false));
+        if (res.data.valid) { setUser(res.data.user); } else { clearAuthStorage(); }
+      }).catch(() => { clearAuthStorage(); }).finally(() => setLoading(false));
     } else { setLoading(false); }
   }, []);
 
@@ -45,7 +51,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/login" element={user ? <Navigate to="/" /> : <Login onLogin={(u) => setUser(u)} />} />
-      <Route path="/" element={<ProtectedRoute><AppLayout user={user} onLogout={() => { setUser(null); localStorage.removeItem('token'); }} /></ProtectedRoute>}>
+      <Route path="/" element={<ProtectedRoute><AppLayout user={user} onLogout={() => { setUser(null); clearAuthStorage(); }} /></ProtectedRoute>}>
         <Route index element={<Dashboard />} />
         <Route path="masterdata/*" element={<MasterData />} />
         <Route path="inventory/*" element={<Inventory />} />

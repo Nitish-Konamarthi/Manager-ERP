@@ -26,6 +26,14 @@ export class AuthController {
     return this.authService.refresh(dto.refreshToken)
   }
 
+  @Public()
+  @Post('verify')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Verify JWT token and return user details' })
+  async verify(@Body() dto: { token: string }) {
+    return this.authService.verify(dto.token)
+  }
+
   @UseGuards(JwtAuthGuard)
   @Post('logout')
   @HttpCode(HttpStatus.OK)

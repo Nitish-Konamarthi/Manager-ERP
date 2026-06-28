@@ -18,6 +18,8 @@ import { CustomersModule } from './modules/customers/customers.module'
 import { SuppliersModule } from './modules/suppliers/suppliers.module'
 import { ReportsModule } from './modules/reports/reports.module'
 import { HealthController } from './modules/health.controller'
+import { DashboardController } from './modules/dashboard.controller'
+import { CompatibilityController } from './modules/compatibility.controller'
 
 @Module({
   imports: [
@@ -39,7 +41,7 @@ import { HealthController } from './modules/health.controller'
     SuppliersModule,
     ReportsModule,
   ],
-  controllers: [HealthController],
+  controllers: [HealthController, DashboardController, CompatibilityController],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
 export class AppModule {}
