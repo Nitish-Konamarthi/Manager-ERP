@@ -1,0 +1,90 @@
+-- ============================================================================
+-- Concurrency & Consistency Setup
+-- ============================================================================
+
+-- 1. Check constraints (safety net — prevents negative stock at DB level)
+ALTER TABLE stock_batches
+  ADD CONSTRAINT IF NOT EXISTS chk_available_non_negative
+  CHECK (available_qty >= 0);
+
+ALTER TABLE stock_batches
+  ADD CONSTRAINT IF NOT EXISTS chk_reserved_not_exceed_available
+  CHECK (reserved_qty <= available_qty);
+
+ALTER TABLE stock_batches
+  ADD CONSTRAINT IF NOT EXISTS chk_received_positive
+  CHECK (received_qty > 0);
+
+-- 2. Database-level lock timeout (prevents indefinite waiting)
+ALTER DATABASE manager_erp SET lock_timeout = '5s';
+
+-- 3. Partial indexes for contention-aware queries
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_batch_available
+  ON stock_batches (product_id, received_date ASC)
+  WHERE deleted_at IS NULL AND (available_qty - reserved_qty) > 0;
+
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_batch_lock_order
+  ON stock_batches (product_id, received_date, id)
+  WHERE deleted_at IS NULL AND status IN ('AVAILABLE', 'PARTIALLY_RESERVED');
+
+-- 4. Idempotency key cleanup (run daily via pg_cron)
+--    DELETE FROM idempotency_keys WHERE expires_at < NOW();
+
+-- 5. Stored procedure for safe stock reservation
+CREATE OR REPLACE FUNCTION reserve_stock(
+  p_org_id UUID,
+  p_product_id UUID,
+  p_quantity DECIMAL,
+  p_reference_type VARCHAR,
+  p_reference_id UUID,
+  p_user_id UUID
+) RETURNS TABLE(
+  batch_id UUID,
+  allocated DECIMAL,
+  batch_code VARCHAR
+) AS $$
+DECLARE
+  v_remaining DECIMAL := p_quantity;
+  v_batch RECORD;
+  v_allocate DECIMAL;
+BEGIN
+  -- Advisory lock per product — serializes reservations
+  PERFORM pg_advisory_xact_lock(1, hashtext(p_product_id::text));
+
+  FOR v_batch IN
+    SELECT * FROM stock_batches
+    WHERE organization_id = p_org_id
+      AND product_id = p_product_id
+      AND deleted_at IS NULL
+      AND (available_qty - reserved_qty) > 0
+      AND status IN ('AVAILABLE', 'PARTIALLY_RESERVED')
+    ORDER BY received_date ASC, created_at ASC
+    FOR UPDATE
+  LOOP
+    IF v_remaining <= 0 THEN EXIT; END IF;
+
+    v_allocate := LEAST(v_batch.available_qty - v_batch.reserved_qty, v_remaining);
+
+    UPDATE stock_batches
+    SET reserved_qty = reserved_qty + v_allocate,
+        status = CASE
+          WHEN (available_qty - reserved_qty - v_allocate) <= 0 THEN 'FULLY_RESERVED'
+          ELSE 'PARTIALLY_RESERVED'
+        END,
+        version = version + 1
+    WHERE id = v_batch.id;
+
+    batch_id := v_batch.id;
+    allocated := v_allocate;
+    batch_code := v_batch.batch_code;
+    RETURN NEXT;
+
+    v_remaining := v_remaining - v_allocate;
+  END LOOP;
+
+  IF v_remaining > 0 THEN
+    RAISE EXCEPTION 'Insufficient stock for product %. Needed %, found %',
+      p_product_id, p_quantity, p_quantity - v_remaining;
+  END IF;
+END;
+$$ LANGUAGE plpgsql;

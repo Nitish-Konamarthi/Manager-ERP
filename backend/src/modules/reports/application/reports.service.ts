@@ -205,7 +205,7 @@ export class ReportsService {
 
     const sorted = [...result].sort((a, b) => Number(b.avgDailySales) - Number(a.avgDailySales))
     return {
-      fastMoving: sorted.filter(r => typeof r.turnoverDays === 'string' || Number(r.turnoverDays) <= 7).slice(0, 20),
+      fastMoving: sorted.filter(r => typeof r.turnoverDays !== 'string' && Number(r.turnoverDays) <= 7).slice(0, 20),
       slowMoving: sorted.filter(r => typeof r.turnoverDays === 'string' || Number(r.turnoverDays) > 30),
     }
   }
@@ -264,11 +264,10 @@ export class ReportsService {
       const batch = await this.prisma.stockBatch.findUnique({ where: { id: adj.batchId } })
       if (batch) {
         const age = Math.floor((adj.createdAt.getTime() - new Date(batch.receivedDate).getTime()) / (86400000))
-        if (age <= 3) aging['0-3 days'].qty += qty
-        else if (age <= 7) aging['4-7 days'].qty += qty
-        else if (age <= 14) aging['8-14 days'].qty += qty
-        else aging['15+ days'].qty += qty
-        aging['0-3 days'].value += value
+        if (age <= 3) { aging['0-3 days'].qty += qty; aging['0-3 days'].value += value }
+        else if (age <= 7) { aging['4-7 days'].qty += qty; aging['4-7 days'].value += value }
+        else if (age <= 14) { aging['8-14 days'].qty += qty; aging['8-14 days'].value += value }
+        else { aging['15+ days'].qty += qty; aging['15+ days'].value += value }
       }
     }
 

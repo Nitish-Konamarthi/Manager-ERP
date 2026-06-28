@@ -12,7 +12,7 @@ export async function lockBatches(
     const batches = await tx.stockBatch.findMany({
       where: { id: { in: sorted } },
       select: { id: true, receivedDate: true },
-      orderBy: { receivedDate: 'asc' },
+      orderBy: [{ receivedDate: 'asc' }, { id: 'asc' }],
     })
     for (const b of batches) {
       await tx.$executeRawUnsafe(`SELECT 1 FROM "stock_batches" WHERE id = $1 FOR UPDATE`, b.id)

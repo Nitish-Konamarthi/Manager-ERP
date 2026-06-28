@@ -1,0 +1,280 @@
+-- ============================================================================
+-- Reporting & Analytics — SQL Indexes, Materialized Views, Aggregation
+-- ============================================================================
+
+-- ── 1. Performance Indexes ──
+-- All indexes are CONCURRENTLY safe (further safety check: not in transaction in prod)
+
+-- Sales Order Reporting
+CREATE INDEX IF NOT EXISTS idx_sales_order_org_date
+  ON "SalesOrder" ("organizationId", "orderDate" DESC)
+  WHERE "deletedAt" IS NULL;
+
+CREATE INDEX IF NOT EXISTS idx_sales_order_status
+  ON "SalesOrder" ("organizationId", "paymentStatus")
+  WHERE "deletedAt" IS NULL;
+
+-- Sales Order Items (product-level drilldown)
+CREATE INDEX IF NOT EXISTS idx_so_item_product
+  ON "SalesOrderItem" ("productId");
+
+CREATE INDEX IF NOT EXISTS idx_so_item_order
+  ON "SalesOrderItem" ("orderId");
+
+-- Purchase Order Reporting
+CREATE INDEX IF NOT EXISTS idx_purchase_order_org_date
+  ON "PurchaseOrder" ("organizationId", "orderDate" DESC)
+  WHERE "deletedAt" IS NULL;
+
+CREATE INDEX IF NOT EXISTS idx_purchase_order_supplier
+  ON "PurchaseOrder" ("organizationId", "supplierId")
+  WHERE "deletedAt" IS NULL;
+
+-- Stock Movements (spoilage, fast-moving)
+CREATE INDEX IF NOT EXISTS idx_stock_movement_org_type_date
+  ON "StockMovement" ("organizationId", "movementType", "createdAt" DESC);
+
+CREATE INDEX IF NOT EXISTS idx_stock_movement_product
+  ON "StockMovement" ("organizationId", "productId", "createdAt" DESC);
+
+-- Stock Batches (aging, valuation)
+CREATE INDEX IF NOT EXISTS idx_stock_batch_org_product_avail
+  ON "StockBatch" ("organizationId", "productId")
+  WHERE "deletedAt" IS NULL AND "availableQty" > 0;
+
+CREATE INDEX IF NOT EXISTS idx_stock_batch_received_date
+  ON "StockBatch" ("organizationId", "receivedDate")
+  WHERE "deletedAt" IS NULL;
+
+-- Inventory Adjustments (spoilage tracking)
+CREATE INDEX IF NOT EXISTS idx_inv_adjustment_org_date
+  ON "InventoryAdjustment" ("organizationId", "createdAt" DESC);
+
+-- Account Transactions (cash/bank book)
+CREATE INDEX IF NOT EXISTS idx_account_txn_account_date
+  ON "AccountTransaction" ("accountId", "transactionDate" DESC);
+
+CREATE INDEX IF NOT EXISTS idx_account_txn_org_date
+  ON "AccountTransaction" ("organizationId", "transactionDate" DESC);
+
+-- Customer Ledger
+CREATE INDEX IF NOT EXISTS idx_customer_ledger_customer_date
+  ON "CustomerLedger" ("customerId", "transactionDate" DESC);
+
+-- Supplier Ledger
+CREATE INDEX IF NOT EXISTS idx_supplier_ledger_supplier_date
+  ON "SupplierLedger" ("supplierId", "transactionDate" DESC);
+
+-- Expense Claims
+CREATE INDEX IF NOT EXISTS idx_expense_claim_org_date
+  ON "ExpenseClaim" ("organizationId", "claimDate" DESC)
+  WHERE "status" = 'APPROVED';
+
+-- Composite: Outstanding Customers (what vendor owes)
+CREATE INDEX IF NOT EXISTS idx_sales_order_outstanding
+  ON "SalesOrder" ("organizationId", "customerId")
+  WHERE "deletedAt" IS NULL AND "paymentStatus" IN ('PENDING', 'PARTIAL');
+
+-- Daily Closing Snapshot lookup
+CREATE INDEX IF NOT EXISTS idx_daily_stock_snapshot_org_date
+  ON "DailyStockSnapshot" ("organizationId", "snapshotDate" DESC);
+
+
+-- ── 2. Materialized Views ──
+-- Refresh : REFRESH MATERIALIZED VIEW CONCURRENTLY mv_daily_sales_summary;
+-- Schedule: daily at midnight via pg_cron or BullMQ cron job
+
+-- 2.1 Daily Sales Summary
+CREATE MATERIALIZED VIEW IF NOT EXISTS mv_daily_sales_summary AS
+SELECT
+  so."organizationId",
+  so."orderDate"::date AS sale_date,
+  COUNT(DISTINCT so.id) AS order_count,
+  COUNT(DISTINCT so."customerId") AS customer_count,
+  SUM(so.total)::numeric(12,2) AS revenue,
+  SUM(so."paidAmount")::numeric(12,2) AS collected,
+  SUM(so.total - so."paidAmount")::numeric(12,2) AS outstanding,
+  SUM(soi.quantity)::numeric(12,3) AS total_quantity,
+  COUNT(DISTINCT soi."productId") AS product_count
+FROM "SalesOrder" so
+JOIN "SalesOrderItem" soi ON soi."orderId" = so.id
+WHERE so."deletedAt" IS NULL
+GROUP BY so."organizationId", so."orderDate"::date
+ORDER BY so."organizationId", so."orderDate"::date DESC;
+
+CREATE UNIQUE INDEX IF NOT EXISTS uidx_mv_daily_sales
+  ON mv_daily_sales_summary ("organizationId", "sale_date");
+
+-- 2.2 Product Sales Summary (monthly)
+CREATE MATERIALIZED VIEW IF NOT EXISTS mv_product_monthly_sales AS
+SELECT
+  so."organizationId",
+  soi."productId",
+  DATE_TRUNC('month', so."orderDate")::date AS month,
+  SUM(soi.quantity)::numeric(12,3) AS qty_sold,
+  SUM(soi."totalPrice")::numeric(12,2) AS revenue,
+  AVG(soi."unitPrice")::numeric(12,2) AS avg_price,
+  COUNT(DISTINCT so.id) AS order_count
+FROM "SalesOrder" so
+JOIN "SalesOrderItem" soi ON soi."orderId" = so.id
+WHERE so."deletedAt" IS NULL
+GROUP BY so."organizationId", soi."productId", DATE_TRUNC('month', so."orderDate")
+ORDER BY so."organizationId", soi."productId", month DESC;
+
+CREATE UNIQUE INDEX IF NOT EXISTS uidx_mv_product_monthly
+  ON mv_product_monthly_sales ("organizationId", "productId", "month");
+
+-- 2.3 Customer Summary
+CREATE MATERIALIZED VIEW IF NOT EXISTS mv_customer_summary AS
+SELECT
+  c.id AS "customerId",
+  c."organizationId",
+  c.name,
+  c."companyName",
+  c.phone,
+  COALESCE(SUM(so.total)::numeric(12,2), 0) AS total_purchases,
+  COALESCE(SUM(so.total - so."paidAmount")::numeric(12,2), 0) AS outstanding,
+  COALESCE(COUNT(so.id), 0) AS order_count,
+  MAX(so."orderDate") AS last_order_date,
+  COALESCE(SUM(soi.quantity)::numeric(12,3), 0) AS total_quantity
+FROM "Customer" c
+LEFT JOIN "SalesOrder" so ON so."customerId" = c.id AND so."deletedAt" IS NULL
+LEFT JOIN "SalesOrderItem" soi ON soi."orderId" = so.id
+WHERE c."deletedAt" IS NULL
+GROUP BY c.id, c."organizationId", c.name, c."companyName", c.phone;
+
+CREATE UNIQUE INDEX IF NOT EXISTS uidx_mv_customer_summary
+  ON mv_customer_summary ("customerId");
+
+-- 2.4 Supplier Summary
+CREATE MATERIALIZED VIEW IF NOT EXISTS mv_supplier_summary AS
+SELECT
+  s.id AS "supplierId",
+  s."organizationId",
+  s.name,
+  s.phone,
+  COALESCE(SUM(po.total)::numeric(12,2), 0) AS total_purchases,
+  COALESCE(COUNT(po.id), 0) AS order_count,
+  MAX(po."orderDate") AS last_order_date,
+  COALESCE(AVG(po.total)::numeric(12,2), 0) AS avg_order_value
+FROM "Supplier" s
+LEFT JOIN "PurchaseOrder" po ON po."supplierId" = s.id AND po."deletedAt" IS NULL
+WHERE s."deletedAt" IS NULL
+GROUP BY s.id, s."organizationId", s.name, s.phone;
+
+CREATE UNIQUE INDEX IF NOT EXISTS uidx_mv_supplier_summary
+  ON mv_supplier_summary ("supplierId");
+
+-- 2.5 Daily Profit Summary
+CREATE MATERIALIZED VIEW IF NOT EXISTS mv_daily_profit AS
+SELECT
+  soi.sale_date,
+  soi."organizationId",
+  soi.revenue,
+  COALESCE(pc.cogs, 0)::numeric(12,2) AS cogs,
+  (soi.revenue - COALESCE(pc.cogs, 0))::numeric(12,2) AS gross_profit,
+  CASE WHEN soi.revenue > 0
+    THEN ((soi.revenue - COALESCE(pc.cogs, 0)) / soi.revenue * 100)::numeric(5,2)
+    ELSE 0
+  END AS margin_pct
+FROM mv_daily_sales_summary soi
+LEFT JOIN LATERAL (
+  SELECT SUM(sb."unitCost" * soi2.quantity)::numeric(12,2) AS cogs
+  FROM "SalesOrderItem" soi2
+  JOIN "SalesOrder" so2 ON so2.id = soi2."orderId"
+  LEFT JOIN "StockBatch" sb ON sb."productId" = soi2."productId"
+    AND sb."organizationId" = soi2."orderId"  -- approximated
+  WHERE so2."orderDate"::date = soi.sale_date
+    AND so2."organizationId" = soi."organizationId"
+    AND so2."deletedAt" IS NULL
+) pc ON true;
+
+CREATE UNIQUE INDEX IF NOT EXISTS uidx_mv_daily_profit
+  ON mv_daily_profit ("organizationId", "sale_date");
+
+-- 2.6 Current Stock by Product
+CREATE MATERIALIZED VIEW IF NOT EXISTS mv_current_stock AS
+SELECT
+  sb."organizationId",
+  sb."productId",
+  p.name AS product_name,
+  p.sku,
+  pc.name AS category_name,
+  SUM(sb."availableQty")::numeric(12,3) AS total_available,
+  SUM(sb."reservedQty")::numeric(12,3) AS total_reserved,
+  (SUM(sb."availableQty") - SUM(sb."reservedQty"))::numeric(12,3) AS free_stock,
+  COUNT(sb.id)::integer AS batch_count,
+  MIN(sb."receivedDate")::date AS oldest_batch_date,
+  AVG(sb."unitCost")::numeric(12,2) AS avg_unit_cost,
+  (SUM(sb."availableQty" * sb."unitCost") / NULLIF(SUM(sb."availableQty"), 0))::numeric(12,2) AS weighted_avg_cost,
+  SUM(sb."availableQty" * sb."unitCost")::numeric(12,2) AS stock_value
+FROM "StockBatch" sb
+JOIN "Product" p ON p.id = sb."productId"
+LEFT JOIN "Category" pc ON pc.id = p."categoryId"
+WHERE sb."deletedAt" IS NULL AND sb."availableQty" > 0
+GROUP BY sb."organizationId", sb."productId", p.name, p.sku, pc.name;
+
+CREATE UNIQUE INDEX IF NOT EXISTS uidx_mv_current_stock
+  ON mv_current_stock ("organizationId", "productId");
+
+-- 2.7 Monthly Spoilage Summary
+CREATE MATERIALIZED VIEW IF NOT EXISTS mv_monthly_spoilage AS
+SELECT
+  ia."organizationId",
+  DATE_TRUNC('month', ia."createdAt")::date AS month,
+  ia."adjustmentType" AS reason,
+  SUM(ABS(ia.quantity))::numeric(12,3) AS qty_lost,
+  COUNT(ia.id)::integer AS adjustment_count,
+  (SUM(ABS(ia.quantity)) * COALESCE(AVG(sb."unitCost"), 0))::numeric(12,2) AS estimated_loss_value
+FROM "InventoryAdjustment" ia
+LEFT JOIN "StockBatch" sb ON sb.id = ia."batchId"
+GROUP BY ia."organizationId", DATE_TRUNC('month', ia."createdAt"), ia."adjustmentType"
+ORDER BY ia."organizationId", month DESC, reason;
+
+CREATE UNIQUE INDEX IF NOT EXISTS uidx_mv_monthly_spoilage
+  ON mv_monthly_spoilage ("organizationId", "month", "reason");
+
+-- 2.8 Aging Summary (current stock by age bucket)
+CREATE MATERIALIZED VIEW IF NOT EXISTS mv_stock_aging AS
+SELECT
+  sb."organizationId",
+  sb."productId",
+  p.name AS product_name,
+  CASE
+    WHEN (CURRENT_DATE - sb."receivedDate"::date) <= 3 THEN '0-3 days'
+    WHEN (CURRENT_DATE - sb."receivedDate"::date) <= 7 THEN '4-7 days'
+    WHEN (CURRENT_DATE - sb."receivedDate"::date) <= 14 THEN '8-14 days'
+    ELSE '15+ days'
+  END AS age_bucket,
+  SUM(sb."availableQty")::numeric(12,3) AS qty,
+  (SUM(sb."availableQty") * AVG(sb."unitCost"))::numeric(12,2) AS value
+FROM "StockBatch" sb
+JOIN "Product" p ON p.id = sb."productId"
+WHERE sb."deletedAt" IS NULL AND sb."availableQty" > 0
+GROUP BY sb."organizationId", sb."productId", p.name,
+  CASE
+    WHEN (CURRENT_DATE - sb."receivedDate"::date) <= 3 THEN '0-3 days'
+    WHEN (CURRENT_DATE - sb."receivedDate"::date) <= 7 THEN '4-7 days'
+    WHEN (CURRENT_DATE - sb."receivedDate"::date) <= 14 THEN '8-14 days'
+    ELSE '15+ days'
+  END;
+
+CREATE UNIQUE INDEX IF NOT EXISTS uidx_mv_stock_aging
+  ON mv_stock_aging ("organizationId", "productId", "age_bucket");
+
+
+-- ── 3. Refresh Function (single call to rebuild all materialized views) ──
+
+CREATE OR REPLACE FUNCTION refresh_reporting_views()
+RETURNS void AS $$
+BEGIN
+  REFRESH MATERIALIZED VIEW CONCURRENTLY mv_daily_sales_summary;
+  REFRESH MATERIALIZED VIEW CONCURRENTLY mv_product_monthly_sales;
+  REFRESH MATERIALIZED VIEW CONCURRENTLY mv_customer_summary;
+  REFRESH MATERIALIZED VIEW CONCURRENTLY mv_supplier_summary;
+  REFRESH MATERIALIZED VIEW CONCURRENTLY mv_daily_profit;
+  REFRESH MATERIALIZED VIEW CONCURRENTLY mv_current_stock;
+  REFRESH MATERIALIZED VIEW CONCURRENTLY mv_monthly_spoilage;
+  REFRESH MATERIALIZED VIEW CONCURRENTLY mv_stock_aging;
+END;
+$$ LANGUAGE plpgsql;

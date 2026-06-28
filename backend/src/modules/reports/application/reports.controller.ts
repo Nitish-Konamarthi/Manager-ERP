@@ -1,96 +1,97 @@
 import { Controller, Get, Post, Param, Query, UseGuards } from '@nestjs/common'
-import { AuthGuard } from '@nestjs/passport'
+import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard'
 import { RolesGuard } from '../../../common/guards/roles.guard'
 import { Roles } from '../../../common/decorators/roles.decorator'
+import { CurrentUser } from '../../../common/decorators/current-user.decorator'
 import { ReportsService } from './reports.service'
 
 @Controller('reports')
-@UseGuards(AuthGuard('jwt'), RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class ReportsController {
   constructor(private readonly reports: ReportsService) {}
 
   @Get('daily-sales/:date')
-  dailySales(@Param('date') date: string) {
-    return this.reports.dailySales('org-fixed', date)
+  dailySales(@CurrentUser('orgId') orgId: string, @Param('date') date: string) {
+    return this.reports.dailySales(orgId, date)
   }
 
   @Get('purchases')
-  purchaseReport(@Query('from') from: string, @Query('to') to: string) {
-    return this.reports.purchaseReport('org-fixed', from, to)
+  purchaseReport(@CurrentUser('orgId') orgId: string, @Query('from') from: string, @Query('to') to: string) {
+    return this.reports.purchaseReport(orgId, from, to)
   }
 
   @Get('stock')
-  stockReport() {
-    return this.reports.stockReport('org-fixed')
+  stockReport(@CurrentUser('orgId') orgId: string) {
+    return this.reports.stockReport(orgId)
   }
 
   @Get('fast-moving')
-  fastMoving(@Query('days') days?: string) {
-    return this.reports.fastMovingProducts('org-fixed', days ? parseInt(days, 10) : 30)
+  fastMoving(@CurrentUser('orgId') orgId: string, @Query('days') days?: string) {
+    return this.reports.fastMovingProducts(orgId, days ? parseInt(days, 10) : 30)
   }
 
   @Get('spoilage')
-  spoilageReport(@Query('from') from: string, @Query('to') to: string) {
-    return this.reports.spoilageReport('org-fixed', from, to)
+  spoilageReport(@CurrentUser('orgId') orgId: string, @Query('from') from: string, @Query('to') to: string) {
+    return this.reports.spoilageReport(orgId, from, to)
   }
 
   @Get('profit')
-  profitReport(@Query('from') from: string, @Query('to') to: string) {
-    return this.reports.profitReport('org-fixed', from, to)
+  profitReport(@CurrentUser('orgId') orgId: string, @Query('from') from: string, @Query('to') to: string) {
+    return this.reports.profitReport(orgId, from, to)
   }
 
   @Get('outstanding-customers')
-  outstandingCustomers() {
-    return this.reports.outstandingCustomers('org-fixed')
+  outstandingCustomers(@CurrentUser('orgId') orgId: string) {
+    return this.reports.outstandingCustomers(orgId)
   }
 
   @Get('supplier-ledger/:id')
-  supplierLedger(@Param('id') id: string, @Query('from') from: string, @Query('to') to: string) {
-    return this.reports.supplierLedger('org-fixed', id, from, to)
+  supplierLedger(@CurrentUser('orgId') orgId: string, @Param('id') id: string, @Query('from') from: string, @Query('to') to: string) {
+    return this.reports.supplierLedger(orgId, id, from, to)
   }
 
   @Get('customer-ledger/:id')
-  customerLedger(@Param('id') id: string, @Query('from') from: string, @Query('to') to: string) {
-    return this.reports.customerLedger('org-fixed', id, from, to)
+  customerLedger(@CurrentUser('orgId') orgId: string, @Param('id') id: string, @Query('from') from: string, @Query('to') to: string) {
+    return this.reports.customerLedger(orgId, id, from, to)
   }
 
   @Get('cash-book')
-  cashBook(@Query('from') from: string, @Query('to') to: string) {
-    return this.reports.cashBook('org-fixed', from, to)
+  cashBook(@CurrentUser('orgId') orgId: string, @Query('from') from: string, @Query('to') to: string) {
+    return this.reports.cashBook(orgId, from, to)
   }
 
   @Get('bank-book')
-  bankBook(@Query('from') from: string, @Query('to') to: string) {
-    return this.reports.bankBook('org-fixed', from, to)
+  bankBook(@CurrentUser('orgId') orgId: string, @Query('from') from: string, @Query('to') to: string) {
+    return this.reports.bankBook(orgId, from, to)
   }
 
   @Get('expenses')
-  expenseReport(@Query('from') from: string, @Query('to') to: string) {
-    return this.reports.expenseReport('org-fixed', from, to)
+  expenseReport(@CurrentUser('orgId') orgId: string, @Query('from') from: string, @Query('to') to: string) {
+    return this.reports.expenseReport(orgId, from, to)
   }
 
   @Get('top-customers')
-  topCustomers(@Query('from') from: string, @Query('to') to: string, @Query('limit') limit?: string) {
-    return this.reports.topCustomers('org-fixed', from, to, limit ? parseInt(limit, 10) : 10)
+  topCustomers(@CurrentUser('orgId') orgId: string, @Query('from') from: string, @Query('to') to: string, @Query('limit') limit?: string) {
+    return this.reports.topCustomers(orgId, from, to, limit ? parseInt(limit, 10) : 10)
   }
 
   @Get('top-suppliers')
-  topSuppliers(@Query('from') from: string, @Query('to') to: string, @Query('limit') limit?: string) {
-    return this.reports.topSuppliers('org-fixed', from, to, limit ? parseInt(limit, 10) : 10)
+  topSuppliers(@CurrentUser('orgId') orgId: string, @Query('from') from: string, @Query('to') to: string, @Query('limit') limit?: string) {
+    return this.reports.topSuppliers(orgId, from, to, limit ? parseInt(limit, 10) : 10)
   }
 
   @Get('product-profitability')
-  productProfitability(@Query('from') from: string, @Query('to') to: string) {
-    return this.reports.productProfitability('org-fixed', from, to)
+  productProfitability(@CurrentUser('orgId') orgId: string, @Query('from') from: string, @Query('to') to: string) {
+    return this.reports.productProfitability(orgId, from, to)
   }
 
   @Get('monthly-trends')
-  monthlyTrends(@Query('months') months?: string) {
-    return this.reports.monthlyTrends('org-fixed', months ? parseInt(months, 10) : 12)
+  monthlyTrends(@CurrentUser('orgId') orgId: string, @Query('months') months?: string) {
+    return this.reports.monthlyTrends(orgId, months ? parseInt(months, 10) : 12)
   }
 
   @Get('yearly-trends')
-  yearlyTrends(@Query('years') years?: string) {
-    return this.reports.yearlyTrends('org-fixed', years ? parseInt(years, 10) : 5)
+  yearlyTrends(@CurrentUser('orgId') orgId: string, @Query('years') years?: string) {
+    return this.reports.yearlyTrends(orgId, years ? parseInt(years, 10) : 5)
   }
 }

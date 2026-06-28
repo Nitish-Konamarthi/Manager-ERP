@@ -466,18 +466,37 @@ export class InventoryService {
 
     if (snapshots.length > 0) {
       for (const s of snapshots) {
-        await this.prisma.dailyStockSnapshot.upsert({
-          where: {
-            organizationId_shopId_productId_snapshotDate: {
+        if (s.shopId) {
+          await this.prisma.dailyStockSnapshot.upsert({
+            where: {
+              organizationId_shopId_productId_snapshotDate: {
+                organizationId: s.organizationId,
+                shopId: s.shopId,
+                productId: s.productId,
+                snapshotDate: s.snapshotDate,
+              },
+            },
+            create: s,
+            update: s,
+          })
+        } else {
+          const existing = await this.prisma.dailyStockSnapshot.findFirst({
+            where: {
               organizationId: s.organizationId,
-              shopId: s.shopId || '',
+              shopId: null,
               productId: s.productId,
               snapshotDate: s.snapshotDate,
             },
-          },
-          create: s,
-          update: s,
-        })
+          })
+          if (existing) {
+            await this.prisma.dailyStockSnapshot.update({
+              where: { id: existing.id },
+              data: s,
+            })
+          } else {
+            await this.prisma.dailyStockSnapshot.create({ data: s })
+          }
+        }
       }
     }
 

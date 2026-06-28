@@ -19,10 +19,12 @@ export default function IAM() {
     Promise.all([
       api.get('/iam/users'),
       api.get('/iam/roles'),
-    ]).then(([u, r]) => {
+      api.get('/masterdata/stores'),
+    ]).then(([u, r, s]) => {
       setUsers(u.data);
       setRoles(r.data.roles);
       setPermissions(r.data.permissions);
+      setStores(s.data);
     }).finally(() => setLoading(false));
   };
 

@@ -427,7 +427,7 @@ function TransferManager({ stores }) {
   const [modal, setModal] = useState(false)
   const [detail, setDetail] = useState(null)
   const [detailModal, setDetailModal] = useState(false)
-  const [form] = Form.useState([])
+  const [form] = Form.useForm()
   const [batches, setBatches] = useState([])
 
   const load = () => {
@@ -437,9 +437,11 @@ function TransferManager({ stores }) {
   useEffect(() => { load() }, [])
 
   const startTransfer = async () => {
-    const r = await api.get('/inventory/batches?status=available')
-    setBatches(r.data.filter(b => b.available_qty > 0))
-    setModal(true)
+    try {
+      const r = await api.get('/inventory/batches?status=available')
+      setBatches(r.data.filter(b => b.available_qty > 0))
+      setModal(true)
+    } catch (e) { message.error('Failed to load batches') }
   }
 
   const createTransfer = async (values) => {
@@ -452,21 +454,27 @@ function TransferManager({ stores }) {
   }
 
   const dispatchTransfer = async (id) => {
-    await api.put(`/inventory/transfer/${id}/dispatch`)
-    message.success('Transfer dispatched')
-    load()
+    try {
+      await api.put(`/inventory/transfer/${id}/dispatch`)
+      message.success('Transfer dispatched')
+      load()
+    } catch (e) { message.error('Dispatch failed') }
   }
 
   const receiveTransfer = async (id) => {
-    await api.put(`/inventory/transfer/${id}/receive`)
-    message.success('Transfer received')
-    load()
+    try {
+      await api.put(`/inventory/transfer/${id}/receive`)
+      message.success('Transfer received')
+      load()
+    } catch (e) { message.error('Receive failed') }
   }
 
   const showDetail = async (id) => {
-    const r = await api.get(`/inventory/transfers/${id}`)
-    setDetail(r.data)
-    setDetailModal(true)
+    try {
+      const r = await api.get(`/inventory/transfers/${id}`)
+      setDetail(r.data)
+      setDetailModal(true)
+    } catch (e) { message.error('Failed to load transfer details') }
   }
 
   return <>

@@ -69,7 +69,7 @@ export default function MasterData() {
   const renderForm = () => {
     const data = modal.data;
     if (modal.type === 'produce') return (
-      <Form layout="vertical" initialValues={data || { default_uom: 'kg' }} onFinish={handleSave}>
+      <Form id="form-master" layout="vertical" initialValues={data || { default_uom: 'kg' }} onFinish={handleSave}>
         <Form.Item name="code" label="Code" rules={[{ required: true }]}><Input /></Form.Item>
         <Form.Item name="name" label="Name" rules={[{ required: true }]}><Input /></Form.Item>
         <Form.Item name="category_id" label="Category" rules={[{ required: true }]}><Select options={categories.map(c => ({ value: c.id, label: c.name }))} /></Form.Item>
@@ -81,7 +81,7 @@ export default function MasterData() {
       </Form>
     );
     if (modal.type === 'category') return (
-      <Form layout="vertical" initialValues={data || { target_waste_pct: 5, min_margin_pct: 20, shelf_life_days: 5 }} onFinish={handleSave}>
+      <Form id="form-master" layout="vertical" initialValues={data || { target_waste_pct: 5, min_margin_pct: 20, shelf_life_days: 5 }} onFinish={handleSave}>
         <Form.Item name="name" label="Name" rules={[{ required: true }]}><Input /></Form.Item>
         <Form.Item name="description" label="Description"><Input.TextArea /></Form.Item>
         <Form.Item name="shelf_life_days" label="Shelf Life (days)"><InputNumber min={1} /></Form.Item>
@@ -92,7 +92,7 @@ export default function MasterData() {
       </Form>
     );
     if (modal.type === 'store') return (
-      <Form layout="vertical" initialValues={data || { opening_time: '07:00', closing_time: '20:00' }} onFinish={handleSave}>
+      <Form id="form-master" layout="vertical" initialValues={data || { opening_time: '07:00', closing_time: '20:00' }} onFinish={handleSave}>
         <Form.Item name="code" label="Code" rules={[{ required: true }]}><Input /></Form.Item>
         <Form.Item name="name" label="Name" rules={[{ required: true }]}><Input /></Form.Item>
         <Form.Item name="address" label="Address"><Input.TextArea /></Form.Item>
