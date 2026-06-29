@@ -20,9 +20,12 @@ api.interceptors.response.use(
   res => {
     if (res.data && res.data.success === true && Object.prototype.hasOwnProperty.call(res.data, 'data')) {
       const d = res.data.data;
-      if (d === null || d === undefined) return { ...res, data: [] };
       if (typeof d === 'object' && !Array.isArray(d) && Array.isArray(d.items)) {
-        return { ...res, data: d.items };
+        const metaKeys = Object.keys(d).filter(k => k !== 'items' && k !== 'total' && k !== 'page' && k !== 'limit' && k !== 'offset' && k !== 'totalPages');
+        if (metaKeys.length === 0) {
+          return { ...res, data: d.items };
+        }
+        return { ...res, data: d };
       }
       return { ...res, data: d };
     }

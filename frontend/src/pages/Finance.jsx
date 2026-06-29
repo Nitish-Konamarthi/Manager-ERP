@@ -26,12 +26,12 @@ function AccountingDashboard({ stores }) {
   if (!data) return <Card loading />
   return <>
     <Row gutter={[16, 16]}>
-      <Col span={4}><Card size="small"><Statistic title="Cash in Hand" value={Math.round(data.cash_balance)} prefix="₹" valueStyle={{ color: '#52c41a' }} /></Card></Col>
-      <Col span={4}><Card size="small"><Statistic title="Bank Balance" value={Math.round(data.bank_balance)} prefix="₹" valueStyle={{ color: '#1890ff' }} /></Card></Col>
-      <Col span={4}><Card size="small"><Statistic title="Total (Cash + Bank)" value={Math.round(data.total_cash_and_bank)} prefix="₹" /></Card></Col>
-      <Col span={4}><Card size="small"><Statistic title="Customer Outstanding" value={Math.round(data.customer_outstanding)} prefix="₹" valueStyle={{ color: data.customer_outstanding > 0 ? '#faad14' : '#52c41a' }} /></Card></Col>
-      <Col span={4}><Card size="small"><Statistic title="Supplier Dues" value={Math.round(data.supplier_outstanding)} prefix="₹" valueStyle={{ color: data.supplier_outstanding > 0 ? '#ff4d4f' : '#52c41a' }} /></Card></Col>
-      <Col span={4}><Card size="small"><Statistic title="Today Income" value={Math.round(data.today_income)} prefix="₹" valueStyle={{ color: '#52c41a' }} /></Card></Col>
+      <Col span={4}><Card size="small"><Statistic title="Cash in Hand" value={Math.round(data?.cash_balance || 0)} prefix="₹" valueStyle={{ color: '#52c41a' }} /></Card></Col>
+      <Col span={4}><Card size="small"><Statistic title="Bank Balance" value={Math.round(data?.bank_balance || 0)} prefix="₹" valueStyle={{ color: '#1890ff' }} /></Card></Col>
+      <Col span={4}><Card size="small"><Statistic title="Total (Cash + Bank)" value={Math.round((data?.cash_balance || 0) + (data?.bank_balance || 0))} prefix="₹" /></Card></Col>
+      <Col span={4}><Card size="small"><Statistic title="Customer Outstanding" value={Math.round(data?.customer_outstanding || 0)} prefix="₹" valueStyle={{ color: (data?.customer_outstanding || 0) > 0 ? '#faad14' : '#52c41a' }} /></Card></Col>
+      <Col span={4}><Card size="small"><Statistic title="Supplier Dues" value={Math.round(data?.supplier_outstanding || 0)} prefix="₹" valueStyle={{ color: (data?.supplier_outstanding || 0) > 0 ? '#ff4d4f' : '#52c41a' }} /></Card></Col>
+      <Col span={4}><Card size="small"><Statistic title="Today Income" value={Math.round(data?.today_income || 0)} prefix="₹" valueStyle={{ color: '#52c41a' }} /></Card></Col>
     </Row>
   </>
 }
@@ -72,7 +72,7 @@ function CashBook({ stores }) {
       <Button type="primary" icon={<PlusOutlined />} onClick={() => setTxnModal(true)}>Record Cash Transaction</Button>
       <Button onClick={load}>Refresh</Button>
     </Space>
-    {data && <Row gutter={16} style={{ marginBottom: 12 }}>
+    {data?.summary && <Row gutter={16} style={{ marginBottom: 12 }}>
       <Col span={4}><Card size="small"><Statistic title="Opening" value={Math.round(data.summary.opening_balance)} prefix="₹" /></Card></Col>
       <Col span={4}><Card size="small"><Statistic title="Received" value={Math.round(data.summary.total_in)} prefix="₹" valueStyle={{ color: '#52c41a' }} /></Card></Col>
       <Col span={4}><Card size="small"><Statistic title="Paid Out" value={Math.round(data.summary.total_out)} prefix="₹" valueStyle={{ color: '#ff4d4f' }} /></Card></Col>
@@ -152,7 +152,7 @@ function BankBook({ stores }) {
       <Button type="primary" icon={<PlusOutlined />} onClick={() => setTxnModal(true)}>Record Bank Transaction</Button>
       <Button onClick={load}>Refresh</Button>
     </Space>
-    {data && <Row gutter={16} style={{ marginBottom: 12 }}>
+    {data?.summary && <Row gutter={16} style={{ marginBottom: 12 }}>
       <Col span={4}><Card size="small"><Statistic title="Deposits" value={Math.round(data.summary.total_in)} prefix="₹" valueStyle={{ color: '#52c41a' }} /></Card></Col>
       <Col span={4}><Card size="small"><Statistic title="Withdrawals" value={Math.round(data.summary.total_out)} prefix="₹" valueStyle={{ color: '#ff4d4f' }} /></Card></Col>
       <Col span={4}><Card size="small"><Statistic title="Balance" value={Math.round(data.summary.closing_balance)} prefix="₹" /></Card></Col>
@@ -242,8 +242,8 @@ function IncomeTracker({ stores }) {
       <Button onClick={load}>Refresh</Button>
     </Space>
     {data && <Row gutter={16} style={{ marginBottom: 12 }}>
-      <Col span={6}><Card size="small"><Statistic title="Total Income" value={Math.round(data.total)} prefix="₹" valueStyle={{ color: '#52c41a' }} /></Card></Col>
-      {Object.entries(data.by_head || {}).map(([head, v]) => (
+      <Col span={6}><Card size="small"><Statistic title="Total Income" value={Math.round(data?.total || 0)} prefix="₹" valueStyle={{ color: '#52c41a' }} /></Card></Col>
+      {Object.entries(data?.by_head || {}).map(([head, v]) => (
         <Col span={4} key={head}><Card size="small"><Statistic title={head} value={Math.round(v.total)} prefix="₹" /></Card></Col>
       ))}
     </Row>}
@@ -335,7 +335,7 @@ function CustomerLedgerView({ customers }) {
     </Space>
     {data && <Row gutter={16} style={{ marginBottom: 12 }}>
       <Col span={6}><Card size="small"><Statistic title="Customer" value={data.customer?.name} /></Card></Col>
-      <Col span={6}><Card size="small"><Statistic title="Current Balance" value={Math.round(data.current_balance)} prefix="₹" valueStyle={{ color: data.current_balance > 0 ? '#faad14' : '#52c41a' }} /></Card></Col>
+      <Col span={6}><Card size="small"><Statistic title="Current Balance" value={Math.round(data?.current_balance || 0)} prefix="₹" valueStyle={{ color: (data?.current_balance || 0) > 0 ? '#faad14' : '#52c41a' }} /></Card></Col>
       <Col span={6}><Card size="small"><Statistic title="Credit Limit" value={data.customer?.credit_limit || 0} prefix="₹" /></Card></Col>
       <Col span={6}><Card size="small"><Statistic title="Credit Days" value={data.customer?.credit_days || 0} suffix="days" /></Card></Col>
     </Row>}
@@ -415,7 +415,7 @@ function SupplierLedgerView({ suppliers }) {
     </Space>
     {data && <Row gutter={16} style={{ marginBottom: 12 }}>
       <Col span={8}><Card size="small"><Statistic title="Supplier" value={data.supplier?.name} /></Card></Col>
-      <Col span={8}><Card size="small"><Statistic title="Balance" value={Math.round(data.current_balance)} prefix="₹" valueStyle={{ color: data.current_balance > 0 ? '#ff4d4f' : '#52c41a' }} /></Card></Col>
+      <Col span={8}><Card size="small"><Statistic title="Balance" value={Math.round(data?.current_balance || 0)} prefix="₹" valueStyle={{ color: (data?.current_balance || 0) > 0 ? '#ff4d4f' : '#52c41a' }} /></Card></Col>
     </Row>}
     <Table dataSource={data?.items || []} rowKey="id" loading={loading} size="small" scroll={{ x: 1000 }}
       columns={[
@@ -465,14 +465,14 @@ function OutstandingView() {
   if (!data) return <Card loading />
   return <>
     <Row gutter={16} style={{ marginBottom: 12 }}>
-      <Col span={6}><Card size="small"><Statistic title="Customer Outstanding" value={Math.round(data.totals.customer_outstanding)} prefix="₹" valueStyle={{ color: '#faad14' }} /></Card></Col>
-      <Col span={6}><Card size="small"><Statistic title="Supplier Outstanding" value={Math.round(data.totals.supplier_outstanding)} prefix="₹" valueStyle={{ color: '#ff4d4f' }} /></Card></Col>
-      <Col span={6}><Card size="small"><Statistic title="Net Receivable" value={Math.round(data.totals.customer_outstanding - data.totals.supplier_outstanding)} prefix="₹" /></Card></Col>
+      <Col span={6}><Card size="small"><Statistic title="Customer Outstanding" value={Math.round(data?.totals?.customer_outstanding || 0)} prefix="₹" valueStyle={{ color: '#faad14' }} /></Card></Col>
+      <Col span={6}><Card size="small"><Statistic title="Supplier Outstanding" value={Math.round(data?.totals?.supplier_outstanding || 0)} prefix="₹" valueStyle={{ color: '#ff4d4f' }} /></Card></Col>
+      <Col span={6}><Card size="small"><Statistic title="Net Receivable" value={Math.round((data?.totals?.customer_outstanding || 0) - (data?.totals?.supplier_outstanding || 0))} prefix="₹" /></Card></Col>
     </Row>
     <Row gutter={16}>
       <Col span={12}>
         <Card title="Customer Outstanding" size="small">
-          <Table dataSource={data.customers} rowKey="id" size="small" pagination={false}
+          <Table dataSource={data?.customers || []} rowKey="id" size="small" pagination={false}
             columns={[
               { title: 'Customer', dataIndex: 'name' },
               { title: 'Outstanding', dataIndex: 'current_outstanding', render: v => <Text strong style={{ color: '#faad14' }}>₹{Math.round(v)}</Text> },
@@ -483,7 +483,7 @@ function OutstandingView() {
       </Col>
       <Col span={12}>
         <Card title="Supplier Outstanding" size="small">
-          <Table dataSource={data.suppliers} rowKey="id" size="small" pagination={false}
+          <Table dataSource={data?.suppliers || []} rowKey="id" size="small" pagination={false}
             columns={[
               { title: 'Supplier', dataIndex: 'name' },
               { title: 'Outstanding', dataIndex: 'outstanding', render: v => <Text strong style={{ color: '#ff4d4f' }}>₹{Math.round(v)}</Text> }
@@ -794,7 +794,7 @@ function PLStatement({ stores }) {
   }, [filters])
 
   if (!data) return <Card loading />
-  const isProfitable = data.net_profit > 0
+  const isProfitable = (data?.net_profit || 0) > 0
 
   return <>
     <Space style={{ marginBottom: 12 }}>
@@ -806,30 +806,30 @@ function PLStatement({ stores }) {
       <Col span={12}>
         <Card title="Profit & Loss Statement" size="small">
           <Descriptions column={1} size="small">
-            <Descriptions.Item label="Period">{data.period.from} to {data.period.to}</Descriptions.Item>
+            <Descriptions.Item label="Period">{data?.period?.from || '-'} to {data?.period?.to || '-'}</Descriptions.Item>
           </Descriptions>
           <Divider />
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <tbody>
-              <tr><td style={{ padding: 8, fontWeight: 'bold' }}>Revenue (Sales)</td><td style={{ textAlign: 'right', padding: 8 }}>₹{Math.round(data.revenue.from_sales)}</td></tr>
-              <tr><td style={{ padding: 8 }}>Less: Cost of Goods Sold</td><td style={{ textAlign: 'right', padding: 8, color: '#ff4d4f' }}>(₹{Math.round(data.cogs)})</td></tr>
-              <tr style={{ backgroundColor: '#f6f8fa' }}><td style={{ padding: 8, fontWeight: 'bold' }}>Gross Profit</td><td style={{ textAlign: 'right', padding: 8, fontWeight: 'bold' }}>₹{Math.round(data.gross_profit)} ({data.gross_margin_pct?.toFixed(1)}%)</td></tr>
+              <tr><td style={{ padding: 8, fontWeight: 'bold' }}>Revenue (Sales)</td><td style={{ textAlign: 'right', padding: 8 }}>₹{Math.round(data?.revenue?.from_sales || 0)}</td></tr>
+              <tr><td style={{ padding: 8 }}>Less: Cost of Goods Sold</td><td style={{ textAlign: 'right', padding: 8, color: '#ff4d4f' }}>(₹{Math.round(data?.cogs || 0)})</td></tr>
+              <tr style={{ backgroundColor: '#f6f8fa' }}><td style={{ padding: 8, fontWeight: 'bold' }}>Gross Profit</td><td style={{ textAlign: 'right', padding: 8, fontWeight: 'bold' }}>₹{Math.round(data?.gross_profit || 0)} ({data?.gross_margin_pct?.toFixed(1) || 0}%)</td></tr>
               <tr><td colSpan={2} style={{ padding: 4 }}><Divider style={{ margin: 0 }} /></td></tr>
               <tr><td style={{ padding: 8, fontWeight: 'bold' }}>Expenses</td><td style={{ textAlign: 'right', padding: 8 }}></td></tr>
-              {Object.entries(data.income_by_head || {}).map(([head, v]) => (
+              {Object.entries(data?.income_by_head || {}).map(([head, v]) => (
                 <tr key={head}><td style={{ padding: '2px 8px', paddingLeft: 24 }}>{head}</td><td style={{ textAlign: 'right', padding: '2px 8px' }}>₹{Math.round(v.total)}</td></tr>
               ))}
-              {Object.entries(data.expense_by_type || {}).map(([type, v]) => (
+              {Object.entries(data?.expense_by_type || {}).map(([type, v]) => (
                 <tr key={type}><td style={{ padding: '2px 8px', paddingLeft: 24 }}>{v.account || type}</td><td style={{ textAlign: 'right', padding: '2px 8px', color: '#ff4d4f' }}>(₹{Math.round(v.total)})</td></tr>
               ))}
-              <tr style={{ backgroundColor: '#fff7e6' }}><td style={{ padding: 8, fontWeight: 'bold' }}>Total Expenses</td><td style={{ textAlign: 'right', padding: 8, fontWeight: 'bold', color: '#ff4d4f' }}>₹{Math.round(data.total_expenses)}</td></tr>
+              <tr style={{ backgroundColor: '#fff7e6' }}><td style={{ padding: 8, fontWeight: 'bold' }}>Total Expenses</td><td style={{ textAlign: 'right', padding: 8, fontWeight: 'bold', color: '#ff4d4f' }}>₹{Math.round(data?.total_expenses || 0)}</td></tr>
               <tr><td colSpan={2} style={{ padding: 4 }}><Divider style={{ margin: 0 }} /></td></tr>
               <tr style={{ backgroundColor: isProfitable ? '#f6ffed' : '#fff2f0' }}>
                 <td style={{ padding: 12, fontWeight: 'bold', fontSize: 16 }}>
                   {isProfitable ? <RiseOutlined style={{ color: '#52c41a' }} /> : <FallOutlined style={{ color: '#ff4d4f' }} />} Net Profit / (Loss)
                 </td>
                 <td style={{ textAlign: 'right', padding: 12, fontWeight: 'bold', fontSize: 16, color: isProfitable ? '#52c41a' : '#ff4d4f' }}>
-                  ₹{Math.abs(Math.round(data.net_profit))} ({data.net_margin_pct?.toFixed(1)}%)
+                  ₹{Math.abs(Math.round(data?.net_profit || 0))} ({(data?.net_margin_pct || 0).toFixed(1)}%)
                 </td>
               </tr>
             </tbody>
@@ -838,14 +838,14 @@ function PLStatement({ stores }) {
       </Col>
       <Col span={12}>
         <Card title="Income by Head" size="small">
-          <Table dataSource={data.income_by_head} rowKey="head" size="small" pagination={false}
+          <Table dataSource={data?.income_by_head || []} rowKey="head" size="small" pagination={false}
             columns={[
               { title: 'Income Head', dataIndex: 'head' },
               { title: 'Amount', dataIndex: 'total', render: v => <Text style={{ color: '#52c41a' }}>₹{Math.round(v)}</Text> }
             ]} />
         </Card>
         <Card title="Expenses by Type" size="small" style={{ marginTop: 12 }}>
-          <Table dataSource={data.expense_by_type} rowKey="account" size="small" pagination={false}
+          <Table dataSource={data?.expense_by_type || []} rowKey="account" size="small" pagination={false}
             columns={[
               { title: 'Account', dataIndex: 'account' },
               { title: 'Type', dataIndex: 'txn_type' },
@@ -881,15 +881,15 @@ function CashFlowView({ stores }) {
       <DatePicker value={filters.to} onChange={v => setFilters(f => ({ ...f, to: v }))} />
       <Button onClick={() => setFilters({ ...filters })}>Refresh</Button>
     </Space>
-    <Row gutter={16} style={{ marginBottom: 12 }}>
-      <Col span={6}><Card size="small"><Statistic title="Total Inflow" value={Math.round(data.total_inflow)} prefix="₹" valueStyle={{ color: '#52c41a' }} /></Card></Col>
-      <Col span={6}><Card size="small"><Statistic title="Total Outflow" value={Math.round(data.total_outflow)} prefix="₹" valueStyle={{ color: '#ff4d4f' }} /></Card></Col>
-      <Col span={6}><Card size="small"><Statistic title="Net Cash Flow" value={Math.round(data.net_flow)} prefix="₹" valueStyle={{ color: data.net_flow >= 0 ? '#52c41a' : '#ff4d4f' }} /></Card></Col>
-    </Row>
-    <Row gutter={16}>
+    {data && <Row gutter={16} style={{ marginBottom: 12 }}>
+      <Col span={6}><Card size="small"><Statistic title="Total Inflow" value={Math.round(data?.total_inflow || 0)} prefix="₹" valueStyle={{ color: '#52c41a' }} /></Card></Col>
+      <Col span={6}><Card size="small"><Statistic title="Total Outflow" value={Math.round(data?.total_outflow || 0)} prefix="₹" valueStyle={{ color: '#ff4d4f' }} /></Card></Col>
+      <Col span={6}><Card size="small"><Statistic title="Net Cash Flow" value={Math.round(data?.net_flow || 0)} prefix="₹" valueStyle={{ color: (data?.net_flow || 0) >= 0 ? '#52c41a' : '#ff4d4f' }} /></Card></Col>
+    </Row>}
+    {data && <Row gutter={16}>
       <Col span={12}>
         <Card title="Inflows" size="small">
-          <Table dataSource={data.inflows} rowKey="id" size="small" pagination={{ pageSize: 10 }}
+          <Table dataSource={data?.inflows || []} rowKey="id" size="small" pagination={{ pageSize: 10 }}
             columns={[
               { title: 'Date', dataIndex: 'txn_date', render: v => dayjs(v).format('DD/MM') },
               { title: 'Description', dataIndex: 'description' },
@@ -900,7 +900,7 @@ function CashFlowView({ stores }) {
       </Col>
       <Col span={12}>
         <Card title="Outflows" size="small">
-          <Table dataSource={data.outflows} rowKey="id" size="small" pagination={{ pageSize: 10 }}
+          <Table dataSource={data?.outflows || []} rowKey="id" size="small" pagination={{ pageSize: 10 }}
             columns={[
               { title: 'Date', dataIndex: 'txn_date', render: v => dayjs(v).format('DD/MM') },
               { title: 'Description', dataIndex: 'description' },
@@ -909,9 +909,9 @@ function CashFlowView({ stores }) {
             ]} />
         </Card>
       </Col>
-    </Row>
+    </Row>}
     <Card title="Outflow by Category" size="small" style={{ marginTop: 12 }}>
-      <Table dataSource={Object.entries(data.outflow_by_category || {}).map(([k, v]) => ({ category: k, ...v }))} rowKey="category" size="small" pagination={false}
+      <Table dataSource={Object.entries(data?.outflow_by_category || {}).map(([k, v]) => ({ category: k, ...v }))} rowKey="category" size="small" pagination={false}
         columns={[
           { title: 'Category', dataIndex: 'category' },
           { title: 'Amount', dataIndex: 'total', render: v => <Text style={{ color: '#ff4d4f' }}>₹{Math.round(v)}</Text> },

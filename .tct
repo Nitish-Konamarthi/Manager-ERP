@@ -1,9 +1,32 @@
-#these are the api endpoints in frontend not loading.. what might be the issue and resolve them immediately and also that nav bar or something with can route to tother sections also not working and also these api endpoints when i am refreshing also there are displaying black white page.... and while page reloading i can see the page  correct content but after page is reloaded it is displaying blank page... 
-/sales
-/procurement
+#these are the api endpoints in frontend not loading.. what might be the issue and resolve them immediately 
+and also that nav bar or something with can route to tother sections also not working and there are some errors while selecting these sections in these endpoints like 
+{
+    Something went wrong
+Cannot read properties of undefined (reading 'opening_balance')
+
+and error reloading,,
+
+[Nest] 8768  - 29/06/2026, 9:03:54 am   ERROR [ExceptionsHandler] RangeError: Invalid time value
+    at Date.toISOString (<anonymous>)
+    at InventoryService.closeDaily (C:\Users\91939\Desktop\Manager ERP\backend\src\modules\inventory\application\inventory.service.ts:503:63)
+    at async C:\Users\91939\Desktop\Manager ERP\backend\node_modules\@nestjs\core\router\router-execution-context.js:47:62
+    at async C:\Users\91939\Desktop\Manager ERP\backend\node_modules\@nestjs\core\router\router-proxy.js:9:17
+[Nest] 8768  - 29/06/2026, 9:03:57 am   ERROR [ExceptionsHandler] RangeError: Invalid time value
+    at Date.toISOString (<anonymous>)
+    at InventoryService.closeDaily (C:\Users\91939\Desktop\Manager ERP\backend\src\modules\inventory\application\inventory.service.ts:503:63)
+    at async C:\Users\91939\Desktop\Manager ERP\backend\node_modules\@nestjs\core\router\router-execution-context.js:47:62
+    at async C:\Users\91939\Desktop\Manager ERP\backend\node_modules\@nestjs\core\router\router-proxy.js:9:17
+[Nest] 8768  - 29/06/2026, 9:03:58 am   ERROR [ExceptionsHandler] RangeError: Invalid time value
+    at Date.toISOString (<anonymous>)
+    at InventoryService.closeDaily (C:\Users\91939\Desktop\Manager ERP\backend\src\modules\inventory\application\inventory.service.ts:503:63)
+    at async C:\Users\91939\Desktop\Manager ERP\backend\node_modules\@nestjs\core\router\router-execution-context.js:47:62
+    at async C:\Users\91939\Desktop\Manager ERP\backend\node_modules\@nestjs\core\router\router-proxy.js:9:17
+PS C:\Users\91939\Desktop\Manager ERP\backend> ERROR: The process "10776" not found.
+node:child_process:991
+    throw err;
+}
+
 /finance :
     nav bar{ cash book, bank book, p&l statements, customer ledger, supplier ledger, outstanding}
-
-/customers
-/supplies
-/reports
+/inventory:
+    nav bar{ stock badges, stock ledger, valuation}..

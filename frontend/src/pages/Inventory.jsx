@@ -92,7 +92,7 @@ function BatchViewer({ stores, produce }) {
     if (filters.status) params.set('status', filters.status)
     if (filters.grade) params.set('grade', filters.grade)
     if (filters.age) params.set('age', filters.age)
-    api.get(`/inventory/batches?${params}`).then(r => setBatches(r.data)).finally(() => setLoading(false))
+    api.get(`/inventory/batches?${params}`).then(r => setBatches(Array.isArray(r?.data) ? r.data : [])).finally(() => setLoading(false))
   }, [filters])
 
   useEffect(() => { load() }, [load])
@@ -242,7 +242,10 @@ function StockLedger({ stores, produce }) {
     if (filters.produce_id) params.set('produce_id', filters.produce_id)
     if (filters.from) params.set('from', filters.from.format('YYYY-MM-DD'))
     if (filters.to) params.set('to', filters.to.format('YYYY-MM-DD'))
-    api.get(`/inventory/stock-ledger?${params}`).then(r => setData(r.data)).finally(() => setLoading(false))
+    api.get(`/inventory/stock-ledger?${params}`).then(r => {
+      const d = r.data;
+      setData(Array.isArray(d) ? { items: d, summary: { opening_balance: 0, total_in: 0, total_out: 0, closing_balance: 0, transaction_count: 0 } } : d);
+    }).finally(() => setLoading(false))
   }
   useEffect(() => { load() }, [filters])
 
@@ -259,7 +262,7 @@ function StockLedger({ stores, produce }) {
       <Button icon={<ReloadOutlined />} onClick={load}>Load</Button>
     </Space>
 
-    {data && <Row gutter={16} style={{ marginBottom: 12 }}>
+    {data?.summary && <Row gutter={16} style={{ marginBottom: 12 }}>
       <Col span={4}><Card size="small"><Statistic title="Opening" value={Math.round(data.summary.opening_balance)} suffix="kg" /></Card></Col>
       <Col span={4}><Card size="small"><Statistic title="Total In" value={Math.round(data.summary.total_in)} suffix="kg" valueStyle={{ color: '#52c41a' }} prefix={<ArrowDownOutlined />} /></Card></Col>
       <Col span={4}><Card size="small"><Statistic title="Total Out" value={Math.round(data.summary.total_out)} suffix="kg" valueStyle={{ color: '#ff4d4f' }} prefix={<ArrowUpOutlined />} /></Card></Col>
@@ -362,22 +365,22 @@ function ValuationReport({ stores }) {
       </Select>
     </Space>
     <Row gutter={16} style={{ marginBottom: 12 }}>
-      <Col span={6}><Card size="small"><Statistic title="Total Qty" value={Math.round(data.totals.total_qty)} suffix="kg" /></Card></Col>
-      <Col span={6}><Card size="small"><Statistic title="FIFO Value" value={Math.round(data.totals.fifo_value)} prefix="₹" /></Card></Col>
-      <Col span={6}><Card size="small"><Statistic title="Weighted Avg Value" value={Math.round(data.totals.weighted_avg_value)} prefix="₹" /></Card></Col>
-      <Col span={6}><Card size="small"><Statistic title="Variance" value={Math.round(data.totals.fifo_value - data.totals.weighted_avg_value)} prefix="₹" valueStyle={{ color: Math.abs(data.totals.fifo_value - data.totals.weighted_avg_value) > 100 ? '#faad14' : '#52c41a' }} /></Card></Col>
+      <Col span={6}><Card size="small"><Statistic title="Total Qty" value={Math.round(data.totalQuantity || 0)} suffix="kg" /></Card></Col>
+      <Col span={6}><Card size="small"><Statistic title="FIFO Value" value={Math.round(data.fifoValue || 0)} prefix="₹" /></Card></Col>
+      <Col span={6}><Card size="small"><Statistic title="Weighted Avg Value" value={Math.round(data.weightedAverage || 0)} prefix="₹" /></Card></Col>
+      <Col span={6}><Card size="small"><Statistic title="Variance" value={Math.round((data.fifoValue || 0) - (data.weightedAverage || 0))} prefix="₹" valueStyle={{ color: Math.abs((data.fifoValue || 0) - (data.weightedAverage || 0)) > 100 ? '#faad14' : '#52c41a' }} /></Card></Col>
     </Row>
-    <Table dataSource={data.items || []} rowKey="produce_id" size="small" scroll={{ x: 1000 }}
+    <Table dataSource={Array.isArray(data.details) ? data.details : []} rowKey="id" size="small" scroll={{ x: 1000 }}
       columns={[
-        { title: 'Produce', dataIndex: 'produce_name' },
-        { title: 'Category', dataIndex: 'category' },
-        { title: 'Store', dataIndex: 'store_name' },
-        { title: 'Total Qty', dataIndex: 'total_qty', render: v => Math.round(v) },
-        { title: 'FIFO Cost', dataIndex: 'fifo_cost', render: v => `₹${v?.toFixed(2)}` },
-        { title: 'FIFO Value', dataIndex: 'fifo_value', render: v => `₹${Math.round(v)}` },
-        { title: 'WA Cost', dataIndex: 'weighted_avg_cost', render: v => `₹${v?.toFixed(2)}` },
-        { title: 'Batches', dataIndex: 'batch_count' },
-        { title: 'Oldest Batch', dataIndex: 'oldest_received', render: v => v ? dayjs(v).format('DD/MM') : '-' }
+        { title: 'Produce', dataIndex: 'product' },
+        { title: 'Category', render: () => '-' },
+        { title: 'Store', render: () => '-' },
+        { title: 'Total Qty', dataIndex: 'availableQty', render: v => Math.round(v) },
+        { title: 'FIFO Cost', dataIndex: 'unitCost', render: v => `₹${Number(v)?.toFixed(2)}` },
+        { title: 'FIFO Value', dataIndex: 'fifoValue', render: v => `₹${Math.round(v)}` },
+        { title: 'WA Cost', render: () => '-' },
+        { title: 'Batches', render: () => 1 },
+        { title: 'Oldest Batch', dataIndex: 'receivedDate', render: v => v ? dayjs(v).format('DD/MM') : '-' }
       ]} />
   </>
 }
@@ -396,7 +399,7 @@ function WeightLossTracker({ stores }) {
     if (filters.store_id) p.set('store_id', filters.store_id)
     if (filters.from) p.set('from', filters.from)
     if (filters.to) p.set('to', filters.to)
-    api.get(`/inventory/weight-loss?${p}`).then(r => setData(r.data)).finally(() => setLoading(false))
+    api.get(`/inventory/weight-loss?${p}`).then(r => setData(Array.isArray(r?.data) ? r.data : [])).finally(() => setLoading(false))
   }, [filters])
 
   return <>
@@ -437,14 +440,14 @@ function TransferManager({ stores }) {
 
   const load = () => {
     setLoading(true)
-    api.get('/inventory/transfers').then(r => setTransfers(r.data)).finally(() => setLoading(false))
+    api.get('/inventory/transfers').then(r => setTransfers(Array.isArray(r?.data) ? r.data : [])).finally(() => setLoading(false))
   }
   useEffect(() => { load() }, [])
 
   const startTransfer = async () => {
     try {
       const r = await api.get('/inventory/batches?status=available')
-      setBatches(r.data.filter(b => b.available_qty > 0))
+      setBatches(Array.isArray(r?.data) ? r.data.filter(b => b.available_qty > 0) : [])
       setModal(true)
     } catch (e) { message.error('Failed to load batches') }
   }
@@ -611,7 +614,7 @@ function ReservationDashboard({ stores }) {
   const load = () => {
     setLoading(true)
     const p = storeFilter ? `?store_id=${storeFilter}` : ''
-    api.get(`/inventory/reservations${p}`).then(r => setData(r.data)).finally(() => setLoading(false))
+    api.get(`/inventory/reservations${p}`).then(r => setData(Array.isArray(r?.data) ? r.data : [])).finally(() => setLoading(false))
   }
   useEffect(() => { load() }, [storeFilter])
 
@@ -669,7 +672,7 @@ function ScanningInterface() {
   }
 
   const loadIdentifiers = () => {
-    api.get('/inventory/identifiers').then(r => setIdentifiers(r.data)).catch(() => {})
+    api.get('/inventory/identifiers').then(r => setIdentifiers(Array.isArray(r?.data) ? r.data : [])).catch(() => {})
   }
   useEffect(() => { loadIdentifiers() }, [])
 
@@ -729,7 +732,7 @@ function DailyClosing({ stores }) {
     if (storeFilter) p.set('store_id', storeFilter)
     if (dateRange[0]) p.set('from', dateRange[0].format('YYYY-MM-DD'))
     if (dateRange[1]) p.set('to', dateRange[1].format('YYYY-MM-DD'))
-    api.get(`/inventory/daily-closing?${p}`).then(r => setSnapshots(r.data)).finally(() => setLoading(false))
+    api.get(`/inventory/daily-closing?${p}`).then(r => setSnapshots(Array.isArray(r?.data) ? r.data : [])).finally(() => setLoading(false))
   }
   useEffect(() => { load() }, [storeFilter, dateRange])
 
@@ -806,8 +809,8 @@ export default function Inventory() {
       api.get('/masterdata/stores'),
       api.get('/masterdata/produce')
     ]).then(([s, p]) => {
-      setStores(s.data)
-      setProduce(p.data)
+      setStores(Array.isArray(s?.data) ? s.data : [])
+      setProduce(Array.isArray(p?.data) ? p.data : [])
     }).catch(() => {})
   }, [])
 

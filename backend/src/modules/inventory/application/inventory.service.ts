@@ -405,6 +405,9 @@ export class InventoryService {
   // ── Daily Closing ──
 
   async closeDaily(orgId: string, date: string, shopId?: string) {
+    if (!date || isNaN(new Date(date).getTime())) {
+      throw new BadRequestException('Invalid or missing date parameter')
+    }
     const closeDate = new Date(date)
     const where: any = { organizationId: orgId, deletedAt: null }
     if (shopId) where.shopId = shopId
