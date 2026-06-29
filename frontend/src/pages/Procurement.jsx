@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Tabs, Table, Button, Modal, Form, Input, Select, InputNumber, Space, message, Tag, Card, Row, Col, Statistic } from 'antd'
+import { Tabs, Table, Button, Modal, Form, Input, Select, InputNumber, Space, message, Tag, Card, Row, Col, Statistic, Alert } from 'antd'
 import { PlusOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import api from '../api'
@@ -12,12 +12,14 @@ export default function Procurement() {
   const [produce, setProduce] = useState([]);
   const [stores, setStores] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [poModal, setPoModal] = useState(false);
   const [grnModal, setGrnModal] = useState(false);
   const [wasteModal, setWasteModal] = useState(false);
 
   const load = () => {
     setLoading(true);
+    setError(null);
     Promise.all([
       api.get('/procurement/purchase-orders'),
       api.get('/procurement/goods-receipts'),
@@ -26,12 +28,15 @@ export default function Procurement() {
       api.get('/masterdata/produce'),
       api.get('/masterdata/stores'),
     ]).then(([p, g, w, sup, pro, s]) => {
-      setPos(p.data);
-      setGrns(g.data);
-      setWaste(w.data);
-      setSuppliers(sup.data);
-      setProduce(pro.data);
-      setStores(s.data);
+      setPos(Array.isArray(p?.data) ? p.data : []);
+      setGrns(Array.isArray(g?.data) ? g.data : []);
+      setWaste(Array.isArray(w?.data) ? w.data : []);
+      setSuppliers(Array.isArray(sup?.data) ? sup.data : []);
+      setProduce(Array.isArray(pro?.data) ? pro.data : []);
+      setStores(Array.isArray(s?.data) ? s.data : []);
+    }).catch(e => {
+      const msg = e.response?.data?.message || e.message || 'Failed to load procurement data';
+      setError(msg);
     }).finally(() => setLoading(false));
   };
 
@@ -66,6 +71,8 @@ export default function Procurement() {
       load();
     } catch (err) { message.error(err.response?.data?.error || 'Error'); }
   };
+
+  if (error && !loading) return <Alert message={error} type="error" showIcon action={<Button size="small" onClick={load}>Retry</Button>} />;
 
   return (
     <div>

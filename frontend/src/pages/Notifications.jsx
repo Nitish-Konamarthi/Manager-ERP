@@ -13,8 +13,8 @@ export default function Notifications() {
       api.get('/notifications'),
       api.get('/notifications/generate'),
     ]).then(([n]) => {
-      setNotifications(n.data.notifications);
-      setUnread(n.data.unread_count);
+      setNotifications(n?.data?.notifications || []);
+      setUnread(n?.data?.unread_count || 0);
     }).finally(() => setLoading(false));
   };
 

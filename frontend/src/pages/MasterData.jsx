@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Tabs, Table, Button, Modal, Form, Input, Select, InputNumber, Space, message, Popconfirm, Tag } from 'antd'
+import { Tabs, Table, Button, Modal, Form, Input, Select, InputNumber, Space, message, Popconfirm, Tag, Alert } from 'antd'
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
 import api from '../api'
 
@@ -9,17 +9,22 @@ export default function MasterData() {
   const [stores, setStores] = useState([]);
   const [modal, setModal] = useState({ open: false, data: null, type: 'produce' });
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   const load = () => {
     setLoading(true);
+    setError(null);
     Promise.all([
       api.get('/masterdata/produce'),
       api.get('/masterdata/categories'),
       api.get('/masterdata/stores')
     ]).then(([p, c, s]) => {
-      setProduce(p.data);
-      setCategories(c.data);
-      setStores(s.data);
+      setProduce(Array.isArray(p?.data) ? p.data : []);
+      setCategories(Array.isArray(c?.data) ? c.data : []);
+      setStores(Array.isArray(s?.data) ? s.data : []);
+    }).catch(e => {
+      const msg = e.response?.data?.message || e.message || 'Failed to load master data';
+      setError(msg);
     }).finally(() => setLoading(false));
   };
 
@@ -106,6 +111,8 @@ export default function MasterData() {
       </Form>
     );
   };
+
+  if (error && !loading) return <Alert message={error} type="error" showIcon action={<Button size="small" onClick={load}>Retry</Button>} />;
 
   return (
     <div>

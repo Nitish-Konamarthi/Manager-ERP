@@ -70,11 +70,13 @@ async function main() {
       organizationId: org.id,
       passwordHash: hash,
       name: 'Admin User',
+      username: 'admin',
       status: UserStatus.ACTIVE,
     },
     create: {
       organizationId: org.id,
       email: adminEmail,
+      username: 'admin',
       passwordHash: hash,
       name: 'Admin User',
       status: UserStatus.ACTIVE,

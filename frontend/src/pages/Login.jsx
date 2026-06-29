@@ -11,7 +11,7 @@ export default function Login({ onLogin }) {
   const onFinish = async (values) => {
     setLoading(true);
     try {
-      const res = await api.post('/auth/login', values);
+      const res = await api.post('/auth/login', { identifier: values.identifier, password: values.password });
       localStorage.setItem('token', res.data.accessToken);
       localStorage.setItem('refreshToken', res.data.refreshToken);
       localStorage.setItem('user', JSON.stringify(res.data.user));
@@ -32,8 +32,8 @@ export default function Login({ onLogin }) {
           <Typography.Text type="secondary">Fresh Produce Management System</Typography.Text>
         </Space>
         <Form onFinish={onFinish} layout="vertical" style={{ marginTop: 24 }}>
-          <Form.Item name="email" rules={[{ required: true, type: 'email', message: 'Please enter a valid email' }]}>
-            <Input prefix={<UserOutlined />} placeholder="Email" size="large" />
+          <Form.Item name="identifier" rules={[{ required: true, message: 'Please enter your email or username' }]}>
+            <Input prefix={<UserOutlined />} placeholder="Email / Username" size="large" />
           </Form.Item>
           <Form.Item name="password" rules={[{ required: true, message: 'Please enter password' }]}>
             <Input.Password prefix={<LockOutlined />} placeholder="Password" size="large" />

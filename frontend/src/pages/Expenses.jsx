@@ -17,7 +17,7 @@ export default function Expenses() {
       api.get('/expenses'),
       api.get('/expenses/categories'),
       api.get('/masterdata/stores'),
-    ]).then(([e, c, s]) => { setExpenses(e.data); setCategories(c.data); setStores(s.data); }).finally(() => setLoading(false));
+    ]).then(([e, c, s]) => { setExpenses(Array.isArray(e?.data) ? e.data : []); setCategories(Array.isArray(c?.data) ? c.data : []); setStores(Array.isArray(s?.data) ? s.data : []); }).finally(() => setLoading(false));
   };
 
   useEffect(() => { load(); }, []);

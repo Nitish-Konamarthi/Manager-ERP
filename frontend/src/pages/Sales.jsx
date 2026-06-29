@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Tabs, Table, Button, Modal, Form, Input, Select, InputNumber, Space, message, Tag, DatePicker, Card, Row, Col, Statistic } from 'antd'
+import { Tabs, Table, Button, Modal, Form, Input, Select, InputNumber, Space, message, Tag, DatePicker, Card, Row, Col, Statistic, Alert } from 'antd'
 import { PlusOutlined, SendOutlined, CheckCircleOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import api from '../api'
@@ -13,6 +13,7 @@ export default function Sales() {
   const [produce, setProduce] = useState([]);
   const [stores, setStores] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [orderModal, setOrderModal] = useState(false);
   const [returnModal, setReturnModal] = useState(false);
   const [retailModal, setRetailModal] = useState(false);
@@ -20,6 +21,7 @@ export default function Sales() {
 
   const load = () => {
     setLoading(true);
+    setError(null);
     Promise.all([
       api.get('/sales/retail?limit=50'),
       api.get('/sales/orders'),
@@ -29,13 +31,16 @@ export default function Sales() {
       api.get('/masterdata/produce'),
       api.get('/masterdata/stores'),
     ]).then(([r, o, ct, ret, cus, p, s]) => {
-      setRetailTxns(r.data);
-      setOrders(o.data);
-      setContracts(ct.data);
-      setReturns(ret.data);
-      setCustomers(cus.data);
-      setProduce(p.data);
-      setStores(s.data);
+      setRetailTxns(Array.isArray(r?.data) ? r.data : []);
+      setOrders(Array.isArray(o?.data) ? o.data : []);
+      setContracts(Array.isArray(ct?.data) ? ct.data : []);
+      setReturns(Array.isArray(ret?.data) ? ret.data : []);
+      setCustomers(Array.isArray(cus?.data) ? cus.data : []);
+      setProduce(Array.isArray(p?.data) ? p.data : []);
+      setStores(Array.isArray(s?.data) ? s.data : []);
+    }).catch(e => {
+      const msg = e.response?.data?.message || e.message || 'Failed to load sales data';
+      setError(msg);
     }).finally(() => setLoading(false));
   };
 
@@ -98,6 +103,8 @@ export default function Sales() {
     { title: 'Date', dataIndex: 'order_date', render: v => dayjs(v).format('DD/MM') },
     { render: (_, r) => <Button size="small" onClick={() => api.put(`/sales/orders/${r.id}/status`, { status: 'delivered' }).then(() => { message.success('Status updated'); load(); })}>Deliver</Button> }
   ];
+
+  if (error && !loading) return <Alert message={error} type="error" showIcon action={<Button size="small" onClick={load}>Retry</Button>} />;
 
   return (
     <div>

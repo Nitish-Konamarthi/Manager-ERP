@@ -13,9 +13,9 @@ export class AuthController {
   @Public()
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Login with email and password' })
-  async login(@Body() dto: { email: string; password: string }) {
-    return this.authService.login(dto.email, dto.password)
+  @ApiOperation({ summary: 'Login with email/username and password' })
+  async login(@Body() dto: { identifier: string; password: string }) {
+    return this.authService.login(dto.identifier, dto.password)
   }
 
   @Public()

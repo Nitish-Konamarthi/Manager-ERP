@@ -10,7 +10,7 @@ export default function Customers() {
   const [modal, setModal] = useState(false);
   const [detail, setDetail] = useState(null);
 
-  const load = () => { setLoading(true); api.get('/customers').then(r => setCustomers(r.data)).finally(() => setLoading(false)); };
+  const load = () => { setLoading(true); api.get('/customers').then(r => setCustomers(Array.isArray(r?.data) ? r.data : [])).finally(() => setLoading(false)); };
   useEffect(() => { load(); }, []);
 
   return (<div>

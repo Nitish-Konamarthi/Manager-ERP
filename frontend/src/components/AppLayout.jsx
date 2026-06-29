@@ -9,6 +9,7 @@ import {
   ShopOutlined, FileTextOutlined, ExperimentOutlined
 } from '@ant-design/icons'
 import api from '../api'
+import ErrorBoundary from './ErrorBoundary'
 
 const { Header, Sider, Content } = Layout;
 const { Text } = Typography;
@@ -78,7 +79,9 @@ export default function AppLayout({ user, onLogout }) {
           </Dropdown>
         </Header>
         <Content style={{ margin: 16, padding: 24, background: colorBgContainer, borderRadius: borderRadiusLG, minHeight: 360 }}>
-          <Outlet />
+          <ErrorBoundary>
+            <Outlet />
+          </ErrorBoundary>
         </Content>
       </Layout>
     </Layout>

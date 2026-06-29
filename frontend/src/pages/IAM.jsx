@@ -21,10 +21,10 @@ export default function IAM() {
       api.get('/iam/roles'),
       api.get('/masterdata/stores'),
     ]).then(([u, r, s]) => {
-      setUsers(u.data);
-      setRoles(r.data.roles);
-      setPermissions(r.data.permissions);
-      setStores(s.data);
+      setUsers(Array.isArray(u?.data) ? u.data : []);
+      setRoles(r?.data?.roles || []);
+      setPermissions(r?.data?.permissions || []);
+      setStores(Array.isArray(s?.data) ? s.data : []);
     }).finally(() => setLoading(false));
   };
 

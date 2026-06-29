@@ -19,12 +19,12 @@ export default function Reports() {
     setLoading(true);
     const p = { from: dayjs().subtract(30, 'day').format('YYYY-MM-DD'), to: dayjs().format('YYYY-MM-DD') };
     const calls = [];
-    if (!type || type === 'sales') calls.push(api.get('/reports/sales', { params: p }).then(r => setSalesData(r.data)));
-    if (!type || type === 'purchases') calls.push(api.get('/reports/purchases', { params: p }).then(r => setPurchasesData(r.data)));
-    if (!type || type === 'waste') calls.push(api.get('/reports/waste', { params: p }).then(r => setWasteData(r.data)));
-    if (!type || type === 'inventory') calls.push(api.get('/reports/inventory').then(r => setInvData(r.data)));
-    if (!type || type === 'pl') calls.push(api.get('/reports/pl', { params: p }).then(r => setPlData(r.data)));
-    if (!type || type === 'hotel') calls.push(api.get('/reports/hotel-sales', { params: p }).then(r => setHotelData(r.data)));
+    if (!type || type === 'sales') calls.push(api.get('/reports/sales', { params: p }).then(r => setSalesData(Array.isArray(r?.data) ? r.data : [])));
+    if (!type || type === 'purchases') calls.push(api.get('/reports/purchases', { params: p }).then(r => setPurchasesData(Array.isArray(r?.data) ? r.data : [])));
+    if (!type || type === 'waste') calls.push(api.get('/reports/waste', { params: p }).then(r => setWasteData(Array.isArray(r?.data) ? r.data : [])));
+    if (!type || type === 'inventory') calls.push(api.get('/reports/inventory').then(r => setInvData(Array.isArray(r?.data) ? r.data : [])));
+    if (!type || type === 'pl') calls.push(api.get('/reports/pl', { params: p }).then(r => setPlData(Array.isArray(r?.data) ? r.data : [])));
+    if (!type || type === 'hotel') calls.push(api.get('/reports/hotel-sales', { params: p }).then(r => setHotelData(Array.isArray(r?.data) ? r.data : [])));
     Promise.all(calls).finally(() => setLoading(false));
   };
 

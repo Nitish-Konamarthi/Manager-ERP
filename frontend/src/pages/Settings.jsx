@@ -8,7 +8,7 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.get('/settings').then(r => setSettings(r.data)).finally(() => setLoading(false));
+    api.get('/settings').then(r => setSettings(Array.isArray(r?.data) ? r.data : [])).finally(() => setLoading(false));
   }, []);
 
   const grouped = {};

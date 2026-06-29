@@ -10,6 +10,7 @@ export class UsersService {
   async create(data: {
     organizationId: string
     email: string
+    username?: string
     password: string
     name: string
     phone?: string
@@ -17,11 +18,16 @@ export class UsersService {
   }) {
     const existing = await this.prisma.user.findUnique({ where: { email: data.email } })
     if (existing) throw new ConflictException('Email already in use')
+    if (data.username) {
+      const existingUsername = await this.prisma.user.findUnique({ where: { username: data.username } })
+      if (existingUsername) throw new ConflictException('Username already in use')
+    }
     const hash = await bcrypt.hash(data.password, 12)
     const user = await this.prisma.user.create({
       data: {
         organizationId: data.organizationId,
         email: data.email,
+        username: data.username,
         passwordHash: hash,
         name: data.name,
         phone: data.phone,
@@ -101,6 +107,7 @@ export class UsersService {
     return {
       id: user.id,
       email: user.email,
+      username: user.username,
       name: user.name,
       phone: user.phone,
       status: user.status,

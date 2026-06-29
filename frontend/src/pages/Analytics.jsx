@@ -24,13 +24,13 @@ export default function Analytics() {
       api.get('/analytics/store-comparison'),
       api.get('/analytics/forecast'),
     ]).then(([tp, ph, ps, wt, cp, sc, f]) => {
-      setTopProducts(tp.data);
-      setPeakHours(ph.data);
-      setPaymentSplit(ps.data);
-      setWasteTrend(wt.data);
-      setCatPerformance(cp.data);
-      setStoreComp(sc.data);
-      setForecast(f.data);
+      setTopProducts(Array.isArray(tp?.data) ? tp.data : []);
+      setPeakHours(Array.isArray(ph?.data) ? ph.data : []);
+      setPaymentSplit(Array.isArray(ps?.data) ? ps.data : []);
+      setWasteTrend(Array.isArray(wt?.data) ? wt.data : []);
+      setCatPerformance(Array.isArray(cp?.data) ? cp.data : []);
+      setStoreComp(Array.isArray(sc?.data) ? sc.data : []);
+      setForecast(f?.data || null);
     }).finally(() => setLoading(false));
   }, []);
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Row, Col, Card, Statistic, Table, List, Tag, Typography, Spin, Alert } from 'antd'
+import { Row, Col, Card, Statistic, Table, List, Tag, Typography, Spin, Alert, Button } from 'antd'
 import { ShoppingCartOutlined, DollarOutlined, DeleteOutlined, WarningOutlined, RiseOutlined, ShopOutlined, TeamOutlined, InboxOutlined } from '@ant-design/icons'
 import ReactECharts from 'echarts-for-react'
 import api from '../api'
@@ -7,14 +7,19 @@ import api from '../api'
 export default function Dashboard() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    api.get('/dashboard').then(res => setData(res.data)).catch(() => {}).finally(() => setLoading(false));
+    api.get('/dashboard').then(res => setData(res.data)).catch(e => {
+      const msg = e.response?.data?.message || e.message || 'Failed to load dashboard';
+      setError(msg);
+    }).finally(() => setLoading(false));
     api.get('/notifications/generate').catch(() => {});
   }, []);
 
   if (loading) return <Spin size="large" style={{ display: 'block', margin: '100px auto' }} />;
-  if (!data) return <Alert message="Could not load dashboard" type="error" />;
+  if (error) return <Alert message={error} type="error" showIcon action={<Button size="small" onClick={() => window.location.reload()}>Retry</Button>} />;
+  if (!data) return <Alert message="Could not load dashboard data" type="warning" />;
 
   const { today, alerts, financial, weekly_trend, top_products, store_sales, notifications } = data;
 

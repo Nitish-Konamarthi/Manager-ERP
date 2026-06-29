@@ -13,7 +13,7 @@ export default function Audit() {
     Promise.all([
       api.get('/audit', { params: filters }),
       api.get('/audit/summary'),
-    ]).then(([l, s]) => { setLogs(l.data); setSummary(s.data); }).finally(() => setLoading(false));
+    ]).then(([l, s]) => { setLogs(Array.isArray(l?.data) ? l.data : []); setSummary(s?.data || null); }).finally(() => setLoading(false));
   };
 
   useEffect(() => { load(); }, [filters]);

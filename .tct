@@ -1,0 +1,9 @@
+#these are the api endpoints in frontend not loading.. what might be the issue and resolve them immediately and also that nav bar or something with can route to tother sections also not working and also these api endpoints when i am refreshing also there are displaying black white page.... and while page reloading i can see the page  correct content but after page is reloaded it is displaying blank page... 
+/sales
+/procurement
+/finance :
+    nav bar{ cash book, bank book, p&l statements, customer ledger, supplier ledger, outstanding}
+
+/customers
+/supplies
+/reports

@@ -22,7 +22,7 @@ export default function Vehicles() {
       api.get('/vehicles/trips'),
       api.get('/vehicles/expenses'),
       api.get('/vehicles/maintenance'),
-    ]).then(([v, t, e, m]) => { setVehicles(v.data); setTrips(t.data); setVehExpenses(e.data); setMaintenance(m.data); }).finally(() => setLoading(false));
+    ]).then(([v, t, e, m]) => { setVehicles(Array.isArray(v?.data) ? v.data : []); setTrips(Array.isArray(t?.data) ? t.data : []); setVehExpenses(Array.isArray(e?.data) ? e.data : []); setMaintenance(Array.isArray(m?.data) ? m.data : []); }).finally(() => setLoading(false));
   };
 
   useEffect(() => { load(); }, []);

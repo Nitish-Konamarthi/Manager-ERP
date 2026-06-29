@@ -11,12 +11,18 @@ const { Text, Title } = Typography
 // ─────────────────────────────────────────────────────────────────
 function AccountingDashboard({ stores }) {
   const [data, setData] = useState(null)
+  const [error, setError] = useState(null)
 
   const load = () => {
-    api.get('/accounting/summary').then(r => setData(r.data)).catch(() => {})
+    setError(null);
+    api.get('/accounting/summary').then(r => setData(r.data)).catch(e => {
+      const msg = e.response?.data?.message || e.message || 'Failed to load accounting';
+      setError(msg);
+    })
   }
   useEffect(() => { load(); const iv = setInterval(load, 30000); return () => clearInterval(iv) }, [])
 
+  if (error) return <Alert message={error} type="error" showIcon action={<Button size="small" onClick={load}>Retry</Button>} />;
   if (!data) return <Card loading />
   return <>
     <Row gutter={[16, 16]}>
@@ -929,10 +935,10 @@ export default function Finance() {
       api.get('/suppliers'),
       api.get('/masterdata/stores')
     ]).then(([c, s, st]) => {
-      setCustomers(c.data)
-      setSuppliers(s.data)
-      setStores(st.data)
-    })
+      setCustomers(Array.isArray(c?.data) ? c.data : [])
+      setSuppliers(Array.isArray(s?.data) ? s.data : [])
+      setStores(Array.isArray(st?.data) ? st.data : [])
+    }).catch(() => {})
   }, [])
 
   const tabs = [

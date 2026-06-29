@@ -17,7 +17,7 @@ export class UsersController {
   @Roles('admin')
   @ApiOperation({ summary: 'Create a new user' })
   async create(@CurrentUser('orgId') orgId: string, @Body() dto: {
-    email: string; password: string; name: string; phone?: string; roleIds: string[]
+    email: string; username?: string; password: string; name: string; phone?: string; roleIds: string[]
   }) {
     return this.usersService.create({ ...dto, organizationId: orgId })
   }

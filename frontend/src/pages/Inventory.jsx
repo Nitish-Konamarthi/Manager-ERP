@@ -11,12 +11,17 @@ const { Text, Title } = Typography
 // ─────────────────────────────────────────────────────────────────
 function InventoryDashboard({ stores }) {
   const [data, setData] = useState(null)
+  const [error, setError] = useState(null)
 
   const load = () => {
-    api.get('/inventory/dashboard').then(r => setData(r.data)).catch(() => {})
+    api.get('/inventory/dashboard').then(r => { setData(r.data); setError(null); }).catch(e => {
+      const msg = e.response?.data?.message || e.message || 'Failed to load inventory';
+      setError(msg);
+    })
   }
   useEffect(() => { load(); const iv = setInterval(load, 30000); return () => clearInterval(iv) }, [])
 
+  if (error) return <Alert message={error} type="error" showIcon action={<Button size="small" onClick={load}>Retry</Button>} />;
   if (!data) return <Card loading />
 
   return <>
@@ -803,7 +808,7 @@ export default function Inventory() {
     ]).then(([s, p]) => {
       setStores(s.data)
       setProduce(p.data)
-    })
+    }).catch(() => {})
   }, [])
 
   const tabs = [

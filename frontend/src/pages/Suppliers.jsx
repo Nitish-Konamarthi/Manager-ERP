@@ -9,7 +9,7 @@ export default function Suppliers() {
   const [modal, setModal] = useState(false);
   const [detail, setDetail] = useState(null);
 
-  const load = () => { setLoading(true); api.get('/suppliers').then(r => setSuppliers(r.data)).finally(() => setLoading(false)); };
+  const load = () => { setLoading(true); api.get('/suppliers').then(r => setSuppliers(Array.isArray(r?.data) ? r.data : [])).finally(() => setLoading(false)); };
   useEffect(() => { load(); }, []);
 
   return (<div>
